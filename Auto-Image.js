@@ -210,7 +210,16 @@
     skipCorrectPixels: "Skip Correct Pixels",
     skipCorrectPixelsDesc: "Skip pixels that already have the correct color and count them as painted. Note: May not work due to canvas security restrictions.",
     pixelsSkipped: "Pixels skipped: {count}",
-    speedSettingDesc: "Adjust the painting speed from {min} to {max} pixels per second. Higher speeds may result in longer update times on the WPlace server."
+    speedSettingDesc: "Adjust the painting speed from {min} to {max} pixels per second. Higher speeds may result in longer update times on the WPlace server.",
+    analyze: "Analyze",
+    analyzeDesc: "Analyze the canvas to find and skip already correct pixels.",
+    analysisComplete: "✅ Analysis complete! Found {count} correct pixels.",
+    paintingStrategy: "Painting Strategy",
+    strategy: {
+      linear: "Linear",
+      random: "Random",
+      edgesFirst: "Edges First",
+    },
   },
   pt: {
     title: "WPlace Auto-Image",
@@ -276,7 +285,16 @@
     skipCorrectPixels: "Pular Pixels Corretos",
     skipCorrectPixelsDesc: "Pular pixels que já têm a cor correta e contá-los como pintados. Nota: Pode não funcionar devido a restrições de segurança do canvas.",
     pixelsSkipped: "Pixels pulados: {count}",
-    speedSettingDesc: "Ajuste a velocidade de pintura de {min} a {max} pixels por segundo. Velocidades mais altas podem resultar em tempos de atualização mais longos no servidor WPlace."
+    speedSettingDesc: "Ajuste a velocidade de pintura de {min} a {max} pixels por segundo. Velocidades mais altas podem resultar em tempos de atualização mais longos no servidor WPlace.",
+    analyze: "Analisar",
+    analyzeDesc: "Analisar a tela para encontrar e pular pixels já corretos.",
+    analysisComplete: "✅ Análise completa! Encontrados {count} pixels corretos.",
+    paintingStrategy: "Estratégia de Pintura",
+    strategy: {
+      linear: "Linear",
+      random: "Aleatório",
+      edgesFirst: "Bordas Primeiro",
+    },
   },
   vi: {
     title: "WPlace Auto-Image",
@@ -342,7 +360,16 @@
     skipCorrectPixels: "Bỏ qua Pixel đúng màu",
     skipCorrectPixelsDesc: "Bỏ qua các pixel đã có màu đúng và tính chúng là đã vẽ. Lưu ý: Có thể không hoạt động do hạn chế bảo mật canvas.",
     pixelsSkipped: "Pixel đã bỏ qua: {count}",
-    speedSettingDesc: "Điều chỉnh tốc độ vẽ từ {min} đến {max} pixel mỗi giây. Tốc độ cao có thể làm trong wplace server update mất thời gian hơn."
+    speedSettingDesc: "Điều chỉnh tốc độ vẽ từ {min} đến {max} pixel mỗi giây. Tốc độ cao có thể làm trong wplace server update mất thời gian hơn.",
+    analyze: "Phân tích",
+    analyzeDesc: "Phân tích canvas để tìm và bỏ qua các pixel đã đúng màu.",
+    analysisComplete: "✅ Phân tích hoàn tất! Tìm thấy {count} pixel đúng.",
+    paintingStrategy: "Chiến lược vẽ",
+    strategy: {
+      linear: "Tuyến tính",
+      random: "Ngẫu nhiên",
+      edgesFirst: "Ưu tiên cạnh",
+    },
     },
   fr: {
     title: "WPlace Auto-Image",
@@ -408,7 +435,16 @@
     skipCorrectPixels: "Ignorer les Pixels Corrects",
     skipCorrectPixelsDesc: "Ignorer les pixels qui ont déjà la bonne couleur et les compter comme peints. Note: Peut ne pas fonctionner en raison de restrictions de sécurité du canvas.",
     pixelsSkipped: "Pixels ignorés: {count}",
-    speedSettingDesc: "Ajustez la vitesse de peinture de {min} à {max} pixels par seconde. Des vitesses plus élevées peuvent entraîner des temps de mise à jour plus longs sur le serveur WPlace."
+    speedSettingDesc: "Ajustez la vitesse de peinture de {min} à {max} pixels par seconde. Des vitesses plus élevées peuvent entraîner des temps de mise à jour plus longs sur le serveur WPlace.",
+    analyze: "Analyser",
+    analyzeDesc: "Analyser la toile pour trouver et ignorer les pixels déjà corrects.",
+    analysisComplete: "✅ Analyse terminée! {count} pixels corrects trouvés.",
+    paintingStrategy: "Stratégie de Peinture",
+    strategy: {
+      linear: "Linéaire",
+      random: "Aléatoire",
+      edgesFirst: "Bords d'abord",
+    },
     },
   }
 
@@ -434,39 +470,40 @@
     estimatedTime: 0,
     language: "en",
     paintingSpeed: CONFIG.PAINTING_SPEED.DEFAULT, // pixels per second
-  }
+    paintingStrategy: "linear", // default strategy
+};
 
-  // Global variable to store the captured CAPTCHA token.
-  let capturedCaptchaToken = null
+// Global variable to store the captured CAPTCHA token.
+let capturedCaptchaToken = null;
 
-  // Intercept the original window.fetch function to "listen" for network requests.
-  const originalFetch = window.fetch
-  window.fetch = async (url, options) => {
+// Intercept the original window.fetch function to "listen" for network requests.
+const originalFetch = window.fetch;
+window.fetch = async (url, options) => {
     // Check if the request is for painting a pixel on wplace.
     if (typeof url === "string" && url.includes("https://backend.wplace.live/s0/pixel/")) {
-      try {
-        const payload = JSON.parse(options.body)
-        // If the request body contains the 't' field, it's our CAPTCHA token.
-        if (payload.t) {
-          console.log("✅ CAPTCHA Token Captured:", payload.t)
-          // Store the token for our bot to use.
-          capturedCaptchaToken = payload.t
+        try {
+            const payload = JSON.parse(options.body);
+            // If the request body contains the 't' field, it's our CAPTCHA token.
+            if (payload.t) {
+                console.log("✅ CAPTCHA Token Captured:", payload.t);
+                // Store the token for our bot to use.
+                capturedCaptchaToken = payload.t;
 
-          // Notify the user that the token is captured and they can start the bot.
-          if (document.querySelector("#statusText")?.textContent.includes("CAPTCHA")) {
-            Utils.showAlert("Token captured successfully! Make sure you open the COLOR PALETTE FIRST before start painting.", "success")
-            updateUI("colorsFound", "success", {
-              count: state.availableColors.length,
-            })
-          }
+                // Notify the user that the token is captured and they can start the bot.
+                if (document.querySelector("#statusText")?.textContent.includes("CAPTCHA")) {
+                    Utils.showAlert("Token captured successfully! Make sure you open the COLOR PALETTE FIRST before start painting.", "success");
+                    updateUI("colorsFound", "success", {
+                        count: state.availableColors.length,
+                    });
+                }
+            }
+        } catch (e) {
+            /* Ignore errors if the request body isn't valid JSON */
         }
-      } catch (e) {
-        /* Ignore errors if the request body isn't valid JSON */
-      }
     }
     // Finally, execute the original request, whether we inspected it or not.
-    return originalFetch(url, options)
-  }
+    return originalFetch(url, options);
+};
 
   // LANGUAGE DETECTION
   async function detectLanguage() {
@@ -482,6 +519,34 @@
   }
 
   // UTILITY FUNCTIONS
+  const detectEdges = (pixels, width, height) => {
+      const edges = [];
+      const sobelX = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]];
+      const sobelY = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]];
+
+      for (let y = 1; y < height - 1; y++) {
+          for (let x = 1; x < width - 1; x++) {
+              let gx = 0;
+              let gy = 0;
+
+              for (let i = -1; i <= 1; i++) {
+                  for (let j = -1; j <= 1; j++) {
+                      const idx = ((y + i) * width + (x + j)) * 4;
+                      const intensity = pixels[idx] * 0.299 + pixels[idx + 1] * 0.587 + pixels[idx + 2] * 0.114;
+                      gx += intensity * sobelX[i + 1][j + 1];
+                      gy += intensity * sobelY[i + 1][j + 1];
+                  }
+              }
+
+              const magnitude = Math.sqrt(gx * gx + gy * gy);
+              if (magnitude > 128) { // Threshold
+                  edges.push({ x, y });
+              }
+          }
+      }
+      return edges;
+  };
+
   const Utils = {
     sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
 
@@ -2209,6 +2274,10 @@
                 <i class="fas fa-play"></i>
                 <span>${Utils.t("startPainting")}</span>
               </button>
+              <button id="analyzeBtn" class="wplace-btn wplace-btn-primary" disabled>
+                <i class="fas fa-search"></i>
+                <span>${Utils.t("analyze")}</span>
+              </button>
               <button id="stopBtn" class="wplace-btn wplace-btn-stop" disabled>
                 <i class="fas fa-stop"></i>
                 <span>${Utils.t("stopPainting")}</span>
@@ -2367,6 +2436,34 @@
                   ${Utils.t("speedSettingDesc", {min: CONFIG.PAINTING_SPEED.MIN, max: CONFIG.PAINTING_SPEED.MAX})}
                 </div>
               </div>
+            </div>
+
+            <!-- Painting Strategy Section -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; color: white; font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-map-signs" style="color: #a29bfe; font-size: 14px;"></i>
+                    ${Utils.t("paintingStrategy")}
+                </label>
+                <div style="background: rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                    <select id="paintingStrategy" style="
+                        width: 100%;
+                        padding: 8px 12px;
+                        border: 1px solid rgba(255,255,255,0.2);
+                        border-radius: 8px;
+                        background: rgba(255,255,255,0.1);
+                        color: white;
+                        font-size: 13px;
+                        font-family: inherit;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    ">
+                        <option value="linear" ${state.paintingStrategy === 'linear' ? 'selected' : ''} style="background: #2d3748; color: white;">${Utils.t("strategy.linear")}</option>
+                        <option value="random" ${state.paintingStrategy === 'random' ? 'selected' : ''} style="background: #2d3748; color: white;">${Utils.t("strategy.random")}</option>
+                        <option value="edgesFirst" ${state.paintingStrategy === 'edgesFirst' ? 'selected' : ''} style="background: #2d3748; color: white;">${Utils.t("strategy.edgesFirst")}</option>
+                    </select>
+                    <div style="color: rgba(255,255,255,0.7); font-size: 11px; line-height: 1.3; margin-top: 6px;">
+                        ${Utils.t("strategy.description")}
+                    </div>
+                </div>
             </div>
 
             <!-- Language Section -->
@@ -2591,6 +2688,8 @@
     const selectPosBtn = container.querySelector("#selectPosBtn")
     const startBtn = container.querySelector("#startBtn")
     const stopBtn = container.querySelector("#stopBtn")
+    const analyzeBtn = container.querySelector('#analyzeBtn');
+    const paintingStrategy = container.querySelector('#paintingStrategy');
     const saveBtn = container.querySelector("#saveBtn")
     const loadBtn = container.querySelector("#loadBtn")
     const saveToFileBtn = container.querySelector("#saveToFileBtn")
@@ -3429,6 +3528,7 @@
       selectPosBtn.disabled = true
       resizeBtn.disabled = true
       saveBtn.disabled = true
+      analyzeBtn.disabled = true
 
       updateUI("startPaintingMsg", "success")
 
@@ -3442,6 +3542,7 @@
         state.running = false
         stopBtn.disabled = true
         saveBtn.disabled = false
+        analyzeBtn.disabled = false
 
         if (!state.stopFlag) {
           startBtn.disabled = true
@@ -3453,6 +3554,60 @@
         }
       }
     }
+
+    async function analyzeCanvas() {
+        if (!state.imageLoaded || !state.startPosition) {
+            updateUI("error", "Image or position not set.");
+            return;
+        }
+
+        updateUI("status", "Analyzing canvas...");
+        let correctPixels = 0;
+        const pixelsToPaint = [];
+
+        const imageData = state.image.getPixelData();
+        const {
+            width,
+            height
+        } = state.image.canvas;
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const canvasX = state.position.x + x;
+                const canvasY = state.position.y + y;
+
+                const pixelColor = getWPlacePixelColor(canvasX, canvasY);
+                if (!pixelColor) continue;
+
+                const imagePixelIndex = (y * width + x) * 4;
+                const imageR = imageData[imagePixelIndex];
+                const imageG = imageData[imagePixelIndex + 1];
+                const imageB = imageData[imagePixelIndex + 2];
+                const imageA = imageData[imagePixelIndex + 3];
+
+                if (imageA < 255) continue; // Skip transparent pixels
+
+                const targetColor = findClosestColor([imageR, imageG, imageB], state.availableColors);
+
+                if (pixelMatches(pixelColor, targetColor, 10)) {
+                    correctPixels++;
+                } else {
+                    pixelsToPaint.push({
+                        x,
+                        y,
+                        color: targetColor
+                    });
+                }
+            }
+        }
+
+        state.pixelsToPaint = pixelsToPaint;
+        updateUI("analysisComplete", {
+            correct: correctPixels,
+            total: width * height
+        });
+    }
+
 
     if (startBtn) {
       startBtn.addEventListener("click", startPainting)
@@ -3572,172 +3727,141 @@
   }
 
   async function processImage() {
-    const { width, height, pixels } = state.imageData
-    const { x: startX, y: startY } = state.startPosition
-    const { x: regionX, y: regionY } = state.region
+    const { width, height, pixels } = state.imageData;
+    const { x: startX, y: startY } = state.startPosition;
+    const { x: regionX, y: regionY } = state.region;
+    const paintingStrategy = document.getElementById('paintingStrategy').value;
 
-    const startRow = state.lastPosition.y || 0
-    const startCol = state.lastPosition.x || 0
+    // If pixelsToPaint is not pre-filled by analysis, generate it now.
+    if (state.pixelsToPaint.length === 0) {
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const idx = (y * width + x) * 4;
+                const r = pixels[idx];
+                const g = pixels[idx + 1];
+                const b = pixels[idx + 2];
+                const alpha = pixels[idx + 3];
 
-    if (!state.paintedMap) {
-      state.paintedMap = Array(height)
-        .fill()
-        .map(() => Array(width).fill(false))
+                if (alpha < CONFIG.TRANSPARENCY_THRESHOLD || Utils.isWhitePixel(r, g, b)) {
+                    continue;
+                }
+                state.pixelsToPaint.push({ x, y, r, g, b });
+            }
+        }
     }
 
-    let pixelBatch = []
+    if (paintingStrategy === 'random') {
+        for (let i = state.pixelsToPaint.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [state.pixelsToPaint[i], state.pixelsToPaint[j]] = [state.pixelsToPaint[j], state.pixelsToPaint[i]];
+        }
+    } else if (paintingStrategy === 'edges') {
+        const edges = detectEdges(pixels, width, height);
+        const edgePixels = new Set(edges.map(p => `${p.x},${p.y}`));
+        state.pixelsToPaint.sort((a, b) => {
+            const aIsEdge = edgePixels.has(`${a.x},${a.y}`);
+            const bIsEdge = edgePixels.has(`${b.x},${b.y}`);
+            if (aIsEdge && !bIsEdge) return -1;
+            if (!aIsEdge && bIsEdge) return 1;
+            return 0;
+        });
+    }
 
+    let pixelBatch = [];
     try {
-      outerLoop: for (let y = startRow; y < height; y++) {
-        for (let x = y === startRow ? startCol : 0; x < width; x++) {
-          if (state.stopFlag) {
-            if (pixelBatch.length > 0) {
-              await sendPixelBatch(pixelBatch, regionX, regionY)
-            }
-            state.lastPosition = { x, y }
-            updateUI("paintingPaused", "warning", { x, y })
-            break outerLoop
-          }
-
-          if (state.paintedMap[y][x]) continue
-
-          const idx = (y * width + x) * 4
-          const r = pixels[idx]
-          const g = pixels[idx + 1]
-          const b = pixels[idx + 2]
-          const alpha = pixels[idx + 3]
-
-          if (alpha < CONFIG.TRANSPARENCY_THRESHOLD) continue
-          if (Utils.isWhitePixel(r, g, b)) continue
-
-          const rgb = [r, g, b]
-          const colorId = findClosestColor(rgb, state.availableColors)
-          const pixelX = startX + x
-          const pixelY = startY + y
-
-          // Skip pixel if it already has the correct color
-          if (CONFIG.SKIP_CORRECT_PIXELS) {
-            console.log(`Checking pixel at (${pixelX},${pixelY}) for skip possibility...`)
-            
-            // Get current pixel color from canvas
-            const currentPixelColor = Utils.getWPlacePixelColor(pixelX, pixelY, x, y)
-            
-            if (currentPixelColor) {
-              // Get target color RGB
-              const targetColor = state.availableColors.find(c => c.id === colorId);
-              if (targetColor) {
-                const matches = Utils.pixelMatches(currentPixelColor, targetColor.rgb)
-                console.log(`Pixel (${pixelX},${pixelY}): Current RGB(${currentPixelColor.join(',')}) vs Target RGB(${targetColor.rgb.join(',')}) - Matches: ${matches}`)
-                
-                if (matches) {
-                  console.log(`✓ Skipping pixel at (${pixelX},${pixelY}) - already correct color`)
-                  state.paintedMap[y][x] = true
-                  state.skippedPixels++
-                  continue
-                } else {
-                  console.log(`✗ Pixel (${pixelX},${pixelY}) needs painting`)
+        for (const pixel of state.pixelsToPaint) {
+            if (state.stopFlag) {
+                if (pixelBatch.length > 0) {
+                    await sendPixelBatch(pixelBatch, regionX, regionY);
                 }
-              }
-            } else {
-              console.log(`⚠ Could not read pixel color at (${pixelX},${pixelY})`)
-            }
-          }
-
-          pixelBatch.push({
-            x: pixelX,
-            y: pixelY,
-            color: colorId,
-            localX: x,
-            localY: y,
-          })
-
-          if (pixelBatch.length >= Math.floor(state.currentCharges)) {
-            const success = await sendPixelBatch(pixelBatch, regionX, regionY)
-
-            if (success === "token_error") {
-              state.stopFlag = true
-              updateUI("captchaNeeded", "error")
-              Utils.showAlert(Utils.t("captchaNeeded"), "error")
-              break outerLoop
+                updateUI("paintingPaused", "warning", { x: pixel.x, y: pixel.y });
+                break;
             }
 
+            const { x, y, r, g, b } = pixel;
+            const rgb = [r, g, b];
+            const colorId = findClosestColor(rgb, state.availableColors);
+            const pixelX = startX + x;
+            const pixelY = startY + y;
+
+            pixelBatch.push({
+                x: pixelX,
+                y: pixelY,
+                color: colorId,
+                localX: x,
+                localY: y,
+            });
+
+            if (pixelBatch.length >= Math.floor(state.currentCharges)) {
+                const success = await sendPixelBatch(pixelBatch, regionX, regionY);
+                if (success === "token_error") {
+                    state.stopFlag = true;
+                    updateUI("captchaNeeded", "error");
+                    Utils.showAlert(Utils.t("captchaNeeded"), "error");
+                    break;
+                }
+                if (success) {
+                    pixelBatch.forEach(p => {
+                        state.paintedPixels++;
+                    });
+                    state.currentCharges -= pixelBatch.length;
+                    updateStats();
+                    updateUI("paintingProgress", "default", {
+                        painted: state.paintedPixels,
+                        total: state.totalPixels,
+                    });
+                    if (state.paintedPixels % 50 === 0) {
+                        Utils.saveProgress();
+                    }
+                    if (CONFIG.PAINTING_SPEED_ENABLED && state.paintingSpeed > 0) {
+                        const delayPerPixel = 1000 / state.paintingSpeed;
+                        const totalDelay = Math.max(100, delayPerPixel * pixelBatch.length);
+                        await Utils.sleep(totalDelay);
+                    }
+                }
+                pixelBatch = [];
+                if (state.currentCharges < 1) {
+                    updateUI("noCharges", "warning", {
+                        time: Utils.formatTime(state.cooldown),
+                    });
+                    await Utils.sleep(state.cooldown);
+                    const chargeUpdate = await WPlaceService.getCharges();
+                    state.currentCharges = chargeUpdate.charges;
+                    state.cooldown = chargeUpdate.cooldown;
+                }
+            }
+        }
+
+        if (pixelBatch.length > 0 && !state.stopFlag) {
+            const success = await sendPixelBatch(pixelBatch, regionX, regionY);
             if (success) {
-              pixelBatch.forEach((pixel) => {
-                state.paintedMap[pixel.localY][pixel.localX] = true
-                state.paintedPixels++
-              })
-
-              state.currentCharges -= pixelBatch.length
-              updateStats()
-              updateUI("paintingProgress", "default", {
-                painted: state.paintedPixels,
-                total: state.totalPixels,
-              })
-
-              // Auto-save progress every 50 pixels
-              if (state.paintedPixels % 50 === 0) {
-                Utils.saveProgress()
-              }
-
-              // Apply painting speed delay if enabled
-              if (CONFIG.PAINTING_SPEED_ENABLED && state.paintingSpeed > 0 && pixelBatch.length > 0) {
-                const delayPerPixel = 1000 / state.paintingSpeed // ms per pixel
-                const totalDelay = Math.max(100, delayPerPixel * pixelBatch.length) // minimum 100ms
-                await Utils.sleep(totalDelay)
-              }
+                pixelBatch.forEach(p => {
+                    state.paintedPixels++;
+                });
+                state.currentCharges -= pixelBatch.length;
+                if (CONFIG.PAINTING_SPEED_ENABLED && state.paintingSpeed > 0) {
+                    const delayPerPixel = 1000 / state.paintingSpeed;
+                    const totalDelay = Math.max(100, delayPerPixel * pixelBatch.length);
+                    await Utils.sleep(totalDelay);
+                }
             }
-
-            pixelBatch = []
-
-            if (state.currentCharges < 1) {
-              updateUI("noCharges", "warning", {
-                time: Utils.formatTime(state.cooldown),
-              })
-              await Utils.sleep(state.cooldown)
-
-              const chargeUpdate = await WPlaceService.getCharges()
-              state.currentCharges = chargeUpdate.charges
-              state.cooldown = chargeUpdate.cooldown
-            }
-          }
         }
-      }
-
-      if (pixelBatch.length > 0 && !state.stopFlag) {
-        const success = await sendPixelBatch(pixelBatch, regionX, regionY)
-        if (success) {
-          pixelBatch.forEach((pixel) => {
-            state.paintedMap[pixel.localY][pixel.localX] = true
-            state.paintedPixels++
-          })
-          state.currentCharges -= pixelBatch.length
-          // Apply painting speed delay for remaining pixels if enabled
-          if (CONFIG.PAINTING_SPEED_ENABLED && state.paintingSpeed > 0 && pixelBatch.length > 0) {
-            const delayPerPixel = 1000 / state.paintingSpeed // ms per pixel
-            const totalDelay = Math.max(100, delayPerPixel * pixelBatch.length) // minimum 100ms
-            await Utils.sleep(totalDelay)
-          }
-        }
-      }
     } finally {
-      if (window._chargesInterval) clearInterval(window._chargesInterval)
-      window._chargesInterval = null
+        if (window._chargesInterval) clearInterval(window._chargesInterval);
+        window._chargesInterval = null;
     }
 
     if (state.stopFlag) {
-      updateUI("paintingStopped", "warning")
-      // Save progress when stopped
-      Utils.saveProgress()
+        updateUI("paintingStopped", "warning");
+        Utils.saveProgress();
     } else {
-      updateUI("paintingComplete", "success", { count: state.paintedPixels })
-      state.lastPosition = { x: 0, y: 0 }
-      state.paintedMap = null
-      // Clear saved data when completed
-      Utils.clearProgress()
+        updateUI("paintingComplete", "success", { count: state.paintedPixels });
+        state.lastPosition = { x: 0, y: 0 };
+        state.paintedMap = null;
+        Utils.clearProgress();
     }
-
-    updateStats()
-  }
+    updateStats();
+}
 
   async function sendPixelBatch(pixelBatch, regionX, regionY) {
     if (!capturedCaptchaToken) {
